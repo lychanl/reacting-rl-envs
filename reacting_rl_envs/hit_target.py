@@ -36,7 +36,7 @@ class HitTargetEnv(Env):
             self, view_range=0.2, num_views=8,
             object_size=0.025, num_obstacles=20, obstacle_size=0.05,
             speed=0.005, max_angular_velocity=0.2, min_obstacle_dist=0.1,
-            target_dist = 0.9,
+            target_dist = 0.9, default_target_loc=None,
             flat_obs=False) -> None:
         self.num_views = num_views
         self.view_range = view_range
@@ -74,10 +74,12 @@ class HitTargetEnv(Env):
             fixtures=b2FixtureDef(
                 shape=b2CircleShape(pos=(0, 0), radius=object_size),
                 restitution=0,
-                density=0,
+                density=1000,
+                friction=0,
             )
         )
         self.target = np.array([1, 0])
+        self.default_target_loc = default_target_loc
         self.obstacles = [self.world.CreateStaticBody(
             position=(1, 1),
             fixtures=b2FixtureDef(shape=b2CircleShape(pos=(0, 0), radius=obstacle_size))
@@ -90,7 +92,7 @@ class HitTargetEnv(Env):
         angle = get_angle(self.object.linearVelocity)
         self.object.linearVelocity = np.cos(angle + angle_diff) * self.speed, np.sin(angle + angle_diff) * self.speed
 
-        self.world.Step(1, 0, 0)
+        self.world.Step(1, 1, 0)
 
         at_target = np.linalg.norm(self.object.position - self.target) < self.object_size
         done = at_target
@@ -110,14 +112,19 @@ class HitTargetEnv(Env):
         direction = np.random.uniform(-np.pi, np.pi)
         self.object.linearVelocity = (np.cos(direction) * self.speed, np.sin(direction) * self.speed)
 
-        target_angle = np.random.uniform(-np.pi, np.pi)
-        self.target = np.array([np.cos(target_angle), np.sin(target_angle)]) * self.target_dist
+        if self.default_target_loc:
+            self.target = self.default_target_loc
+            target_dist = np.linalg.norm(self.target)
+        else:
+            target_dist = self.target_dist
+            target_angle = np.random.uniform(-np.pi, np.pi)
+            self.target = np.array([np.cos(target_angle), np.sin(target_angle)]) * target_dist
 
         for obstacle in self.obstacles:
             obstacle_position = self.target
             while np.linalg.norm(obstacle_position - self.target) < self.object_size:
                 angle = np.random.uniform(-np.pi, np.pi)
-                distance = np.random.uniform(self.min_obstacle_dist, self.target_dist)
+                distance = np.random.uniform(self.min_obstacle_dist, target_dist)
 
                 obstacle_position = np.array([np.cos(angle) * distance, np.sin(angle) * distance])
             

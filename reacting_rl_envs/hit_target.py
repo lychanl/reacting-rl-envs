@@ -49,7 +49,7 @@ class HitTargetEnv(Env):
         self.target_dist = target_dist
         self.flat_obs = flat_obs
 
-        self.action_space = Box(-1, 1)
+        self.action_space = Box(-1, 1, shape=(1,))
         low_obs = np.array([-np.inf, -np.inf, -np.pi] + [0] * num_views)
         low_goal = np.array([-np.inf, -np.inf])
         high_obs = np.array([np.inf, np.inf, np.pi] + [1] * num_views)

@@ -94,7 +94,7 @@ class HitTargetEnv(GoalEnv):
 
         self.world.Step(1, 1, 0)
 
-        reward = self.compute_reward(self.object.position, self.target)
+        reward = self.compute_reward(self.object.position, self.target, {})
         done = reward == 0
 
         info = {
@@ -200,7 +200,8 @@ class HitTargetEnv(GoalEnv):
             }
 
     def compute_reward(self, achieved_goal: object, desired_goal: object, info: Mapping[str, Any]) -> float:
-        return np.linalg.norm(achieved_goal - desired_goal) < self.unwrapped.object_size
+        achieved = np.linalg.norm(achieved_goal - desired_goal) < self.unwrapped.object_size
+        return 0 if achieved else -1
 
     def render(self, mode='human') -> Optional[np.ndarray]:
         import pyglet

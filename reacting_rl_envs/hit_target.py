@@ -1,7 +1,7 @@
 from time import sleep
-from typing import Optional, Tuple, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 import numpy as np
-from gym import Env
+from gym import GoalEnv
 from gym.spaces import Box, Dict
 from Box2D import b2World, b2CircleShape, b2FixtureDef
 
@@ -10,7 +10,7 @@ def get_angle(vec):
     return np.arctan2(vec[1], vec[0])
 
 
-class HitTargetEnv(Env):
+class HitTargetEnv(GoalEnv):
     """
     An environment where the objective is to hit a target with the controlled object. 
     The environemnt is filled with obstacles that have to be avoided or will slow the object down considerably.
@@ -49,7 +49,7 @@ class HitTargetEnv(Env):
         self.target_dist = target_dist
         self.flat_obs = flat_obs
 
-        self.action_space = Box(-1, 1)
+        self.action_space = Box(-1, 1, shape=(1,))
         low_obs = np.array([-np.inf, -np.inf, -np.pi] + [0] * num_views)
         low_goal = np.array([-np.inf, -np.inf])
         high_obs = np.array([np.inf, np.inf, np.pi] + [1] * num_views)
@@ -94,9 +94,8 @@ class HitTargetEnv(Env):
 
         self.world.Step(1, 1, 0)
 
-        at_target = np.linalg.norm(self.object.position - self.target) < self.object_size
-        done = at_target
-        reward = 0 if at_target else -1
+        reward = self.compute_reward(self.object.position, self.target, {})
+        done = reward == 0
 
         info = {
             'object_position': self.object.position,
@@ -122,7 +121,7 @@ class HitTargetEnv(Env):
 
         for obstacle in self.obstacles:
             obstacle_position = self.target
-            while np.linalg.norm(obstacle_position - self.target) < self.object_size:
+            while np.linalg.norm(obstacle_position - self.target) < max(self.object_size, self.obstacle_size):
                 angle = np.random.uniform(-np.pi, np.pi)
                 distance = np.random.uniform(self.min_obstacle_dist, target_dist)
 
@@ -199,6 +198,10 @@ class HitTargetEnv(Env):
                 'desired_goal': target,
                 'achieved_goal': achieved,
             }
+
+    def compute_reward(self, achieved_goal: object, desired_goal: object, info: Mapping[str, Any]) -> float:
+        achieved = np.linalg.norm(achieved_goal - desired_goal) < self.unwrapped.object_size
+        return 0 if achieved else -1
 
     def render(self, mode='human') -> Optional[np.ndarray]:
         import pyglet

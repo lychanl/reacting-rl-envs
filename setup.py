@@ -13,5 +13,5 @@ setup(name="reacting_rl_envs",
       url="https://github.com/lychanl/reacting-rl-envs",
       keywords=["reinforcement learning", "reinforcement learning environmnts"],
       packages=find_packages(),
-      install_requires=["numpy", "gym", "Box2D"]
+      install_requires=["numpy", "gym", "Box2D>=2.3.10"]
 )

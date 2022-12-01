@@ -1,4 +1,4 @@
 gym 
 numpy 
-Box2D 
-pyglet 
+Box2D>=2.3.10 
+pyglet>=2.0.0
